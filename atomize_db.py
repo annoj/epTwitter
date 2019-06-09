@@ -28,7 +28,7 @@ import re
 import mysql.connector
 import pprint
 
-batch_size = 20000
+batch_size = 150000
 
 ep_newshub_rss_config = {
     'user': 'atomizer',
@@ -49,7 +49,9 @@ eptwitter_config = {
 }
 
 def load_batch_from_db(start_id, batch_size, cursor):
-    cursor.execute("SELECT * FROM items WHERE id >= %s AND id < %s;", (start_id, (start_id + batch_size)))
+    cursor.execute(
+            "SELECT * FROM items WHERE id >= %s AND id < %s;", 
+            (start_id, (start_id + batch_size)))
     return cursor.fetchall()
 
 def get_id(tweet):
@@ -110,13 +112,19 @@ def atomize(batch):
     return atomized_batch
 
 def insert_author(author, cursor, connection):
-    cursor.execute("SELECT id FROM meps WHERE name = %s", (author, ))
+    cursor.execute(
+            "SELECT id FROM meps WHERE name = %s", 
+            (author, ))
     author_id = cursor.fetchone()
     if author_id is None:
         print("Author " + author + " was not present in db.")
-        cursor.execute("INSERT IGNORE INTO meps (name, party, country, ep_fraction) VALUES (%s, %s, %s, %s)", (author, 1, "ger", 1))
+        cursor.execute(
+                "INSERT IGNORE INTO meps (name, party, country, ep_fraction) VALUES (%s, %s, %s, %s)", 
+                (author, 1, "ger", 1))
         connection.commit()
-        cursor.execute("SELECT id FROM meps WHERE name = %s", (author, ))
+        cursor.execute(
+                "SELECT id FROM meps WHERE name = %s", 
+                (author, ))
         author_id = cursor.fetchone()[0]
     else:
         author_id = author_id[0]
@@ -126,7 +134,11 @@ def insert_atomized_batch(batch, cursor, connection):
     for tweet in batch:
         author_id = insert_author(tweet[2], eptwitter_cursor, eptwitter_connection)
         normalized_tweet = (tweet[0], tweet[1], author_id, tweet[3], tweet[4], tweet[5], tweet[6], tweet[7], tweet[8])
-        cursor.execute("INSERT IGNORE INTO tweets (id, published, author, body, body_translation, original_language, link, item_id, feedsource) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", normalized_tweet)
+        cursor.execute(
+                "INSERT IGNORE INTO tweets "
+                + "(id, published, author, body, body_translation, original_language, link, item_id, feedsource) "
+                + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", 
+                normalized_tweet)
     connection.commit()
 
 # Get cursor for ep_newshub_rss database
@@ -138,7 +150,7 @@ eptwitter_connection = mysql.connector.connect(**eptwitter_config)
 eptwitter_cursor = eptwitter_connection.cursor()
 
 # Load Batch from db
-print("Loading batch of size " + str(batch_size) + ".")
+print("Loading batch of size " + str(batch_size) + "...")
 batch = load_batch_from_db(1, batch_size, ep_newshub_rss_cursor)
 
 # atomize batch
