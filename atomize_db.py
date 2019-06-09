@@ -26,14 +26,24 @@
 import mysql.connector
 import argparse
 
+#
+# Global variables
+
+# Commandline argument parser
 parser = argparse.ArgumentParser(description="Atomize ep_newshub_rss database into eptwitter database.")
 parser.add_argument("-b", "--batchsize", type=int, nargs=1, required=True, help="specify the size of the batch to atomize, type is int.")
 parser.add_argument("-s", "--startid", type=int, nargs=1, required=True, help="specify the id of the ep_newshub_rss.item to start with, type is int.")
 args = parser.parse_args()
 
+# Command line args
 batch_size = args.batchsize[0]
 start_id = args.startid[0]
 
+# Cache authors
+authors = {}
+cache_miss_count = 0
+
+# Database config
 ep_newshub_rss_config = {
     'user': 'atomizer',
     'password': 'atomizer_password',
@@ -52,6 +62,8 @@ eptwitter_config = {
     'raise_on_warnings': False
 }
 
+#
+# Function implementations
 def load_batch_from_db(start_id, batch_size, cursor):
     cursor.execute(
             "SELECT * FROM items WHERE id >= %s AND id < %s;", 
@@ -116,22 +128,44 @@ def atomize(batch):
     return atomized_batch
 
 def insert_author(author, cursor, connection):
-    cursor.execute(
-            "SELECT id FROM meps WHERE name = %s", 
-            (author, ))
-    author_id = cursor.fetchone()
-    if author_id is None:
-        print("Author " + author + " was not present in db.")
-        cursor.execute(
-                "INSERT IGNORE INTO meps (name, party, country, ep_fraction) VALUES (%s, %s, %s, %s)", 
-                (author, 1, "ger", 1))
-        connection.commit()
-        cursor.execute(
-                "SELECT id FROM meps WHERE name = %s", 
-                (author, ))
-        author_id = cursor.fetchone()[0]
+   
+    # Try get author from cache
+    if author in authors:
+        cached_author = authors.get(author)
+        author_id = cached_author
+
+    
+    # If author was not in cache
     else:
-        author_id = author_id[0]
+
+        # Query database
+        cursor.execute(
+                 "SELECT id FROM meps WHERE name = %s", 
+                (author, ))
+
+        author_id = cursor.fetchone()
+        
+        # If author is not in db insert
+        if author_id is None:
+            print("Author " + author + " was not present in db.")
+            cursor.execute(
+                    "INSERT IGNORE INTO meps (name, party, country, ep_fraction) VALUES (%s, %s, %s, %s)", 
+                    (author, 1, "ger", 1))
+            connection.commit()
+
+            # Query for id
+            cursor.execute(
+                    "SELECT id FROM meps WHERE name = %s", 
+                    (author, ))
+            author_id = cursor.fetchone()[0]
+
+        # Else if author is in db, just use
+        else:
+            author_id = author_id[0]
+
+        # Cache author
+        authors[author] = author_id
+
     return author_id
 
 def insert_atomized_batch(batch, cursor, connection):
@@ -144,6 +178,9 @@ def insert_atomized_batch(batch, cursor, connection):
                 + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", 
                 normalized_tweet)
     connection.commit()
+
+#
+# Main Script
 
 # Get cursor for ep_newshub_rss database
 ep_newshub_rss_connection = mysql.connector.connect(**ep_newshub_rss_config)
