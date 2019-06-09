@@ -49,9 +49,9 @@ args = parser.parse_args()
 batch_size = args.batchsize[0]
 start_id = args.startid[0]
 
-# Cache authors
+# Cache
 authors = {}
-cache_miss_count = 0
+hashtags = {}
 
 # Database config
 ep_newshub_rss_config = {
@@ -133,19 +133,6 @@ def extract_tweet_values(tweet):
 
     return extracted_tweet
 
-def atomize(batch):
-    atomized_batch = []
-    for tweet in batch:
-        extracted_tweet = extract_tweet_values(tweet)
-        extracted_hashtags = extract_hashtags(extracted_tweet[3])
-
-        atomized_batch.append((
-                extracted_tweet,
-                extracted_hashtags
-            ))
-
-    return atomized_batch
-
 def extract_hashtags(tweet_body):
      tweet_words = tweet_body.split(' ')
      hastags = []
@@ -162,6 +149,19 @@ def extract_hashtags(tweet_body):
                  word = word.split('\\n')[0] # If before newline
                  hastags.append(word)
      return hastags
+
+def atomize(batch):
+    atomized_batch = []
+    for tweet in batch:
+        extracted_tweet = extract_tweet_values(tweet)
+        extracted_hashtags = extract_hashtags(extracted_tweet[3])
+
+        atomized_batch.append((
+                extracted_tweet,
+                extracted_hashtags
+            ))
+
+    return atomized_batch
 
 def insert_author(author, cursor, connection):
    
@@ -204,26 +204,46 @@ def insert_author(author, cursor, connection):
 
     return author_id
 
-def insert_atomized_batch(batch, cursor, connection):
-    for tweet in batch:
-        author_id = insert_author(tweet[0][2], eptwitter_cursor, eptwitter_connection)
-        normalized_tweet = (
-                tweet[0][0], 
-                tweet[0][1], 
-                author_id, 
-                tweet[0][3], 
-                tweet[0][4], 
-                tweet[0][5], 
-                tweet[0][6], 
-                tweet[0][7], 
-                tweet[0][8]
-            )
+def insert_tweet(tweet, cursor, connection): 
+    author_id = insert_author(tweet[2], eptwitter_cursor, connection)
+    normalized_tweet = (
+            tweet[0], 
+            tweet[1], 
+            author_id, 
+            tweet[3], 
+            tweet[4], 
+            tweet[5], 
+            tweet[6], 
+            tweet[7], 
+            tweet[8]
+    )
+
+    cursor.execute(
+        "INSERT IGNORE INTO tweets "
+        + "(id, published, author, body, body_translation, original_language, link, item_id, feedsource) "
+        + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", 
+        normalized_tweet
+    )
+
+def insert_hashtag_usage(hashtags, tweet_id, cursor):
+    for hashtag in hashtags:
+        hashtag_usage = (
+            hashtag,
+            tweet_id
+        )
 
         cursor.execute(
-                "INSERT IGNORE INTO tweets "
-                + "(id, published, author, body, body_translation, original_language, link, item_id, feedsource) "
-                + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", 
-                normalized_tweet)
+            "INSERT IGNORE INTO hashtag_usage "
+            + "(hashtag, tweet)"
+            + "VALUES(%s, %s)",
+            hashtag_usage
+        )
+
+def insert_atomized_batch(batch, cursor, connection):
+    for tweet in batch:
+        insert_tweet(tweet[0], cursor, connection)
+        insert_hashtag_usage(tweet[1], tweet[0][0], cursor)   
+
     connection.commit()
 
 #

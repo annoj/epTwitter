@@ -62,19 +62,11 @@ CREATE TABLE `tweets` (
   -- CONSTRAINT `fk_author` FOREIGN KEY (`author`) REFERENCES meps (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Table hashtags
-DROP TABLE IF EXISTS hashtags;
-CREATE TABLE `hashtags` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `hashtag` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Table hashtag_usage
 DROP TABLE IF EXISTS hashtag_usage;
 CREATE TABLE `hashtag_usage` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `hashtag` int(11) NOT NULL,
+  `hashtag` varchar(120) NOT NULL,
   `tweet` int(11) NOT NULL,
   PRIMARY KEY (`id`)
   -- CONSTRAINT `fk_hashtag` FOREIGN KEY (`hashtag`) REFERENCES hashtags (`id`)
