@@ -11,7 +11,7 @@ CREATE USER IF NOT EXISTS
 GRANT SELECT 
   ON ep_newshub_rss.items
   TO 'atomizer'@'localhost';
-GRANT INSERT
+GRANT SELECT, INSERT
   ON eptwitter.*
   TO 'atomizer'@'localhost';
 
