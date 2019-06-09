@@ -198,18 +198,6 @@ batch = load_batch_from_db(start_id, batch_size, ep_newshub_rss_cursor)
 print("Atomizing tweets...")
 atomized_batch = atomize(batch)
 
-# for tweet in atomized_batch:
-#     print("id:                  " + str(tweet[0]))
-#     print("published:           " + tweet[1])
-#     print("author:              " + tweet[2])
-#     print("body:                " + tweet[3])
-#     print("body translation:    " + tweet[4])
-#     print("original language:   " + tweet[5])
-#     print("link:                " + tweet[6])
-#     print("item id:             " + tweet[7])
-#     print("feedsource:          " + tweet[8])
-#     print("")
-
 # Insert atomized tweet into eptwitter.tweets
 print("Inserting atomized tweets into eptwitter.tweets...")
 insert_atomized_batch(atomized_batch, eptwitter_cursor, eptwitter_connection)
