@@ -23,10 +23,7 @@
 # .
 #
 
-import json
-import re
 import mysql.connector
-import pprint
 
 batch_size = 150000
 
