@@ -24,8 +24,15 @@
 #
 
 import mysql.connector
+import argparse
 
-batch_size = 150000
+parser = argparse.ArgumentParser(description="Atomize ep_newshub_rss database into eptwitter database.")
+parser.add_argument("-b", "--batchsize", type=int, nargs=1, required=True, help="specify the size of the batch to atomize, type is int.")
+parser.add_argument("-s", "--startid", type=int, nargs=1, required=True, help="specify the id of the ep_newshub_rss.item to start with, type is int.")
+args = parser.parse_args()
+
+batch_size = args.batchsize[0]
+start_id = args.startid[0]
 
 ep_newshub_rss_config = {
     'user': 'atomizer',
@@ -148,7 +155,7 @@ eptwitter_cursor = eptwitter_connection.cursor()
 
 # Load Batch from db
 print("Loading batch of size " + str(batch_size) + "...")
-batch = load_batch_from_db(1, batch_size, ep_newshub_rss_cursor)
+batch = load_batch_from_db(start_id, batch_size, ep_newshub_rss_cursor)
 
 # atomize batch
 print("Atomizing tweets...")
