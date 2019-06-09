@@ -22,6 +22,16 @@
 #   )
 # .
 #
+# TODO: Scrape party of mep
+# TODO: Scrape fraction of mep
+# TODO: Scrape mep country
+# TODO: Handle meps changing fraction and party
+# 
+# TODO: Extract hashtags
+# 
+# TODO: Analyse sentiment and tag hashtags
+#
+#
 
 import mysql.connector
 import argparse
