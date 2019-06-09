@@ -102,40 +102,66 @@ def get_original_language(tweet):
 def get_link(tweet):
     return tweet[4]
 
-def get_itemm_id(tweet):
+def get_item_id(tweet):
     return tweet[6]
 
 def get_feedsource(tweet):
     return tweet[7]
 
+def extract_tweet_values(tweet):
+    id = get_id(tweet)
+    published = get_published(tweet)
+    author = get_author(tweet)
+    body = get_body(tweet)
+    body_translation = get_body_translation(tweet)
+    original_language = get_original_language(tweet)
+    link = get_link(tweet)
+    item_id = get_item_id(tweet)
+    feedsource = get_feedsource(tweet)
+
+    extracted_tweet = (
+            id,
+            published,
+            author,
+            body,
+            body_translation,
+            original_language,
+            link,
+            item_id,
+            feedsource
+        )
+
+    return extracted_tweet
+
 def atomize(batch):
     atomized_batch = []
     for tweet in batch:
-        
-        # Extract values from tweet
-        id                  = get_id(tweet)
-        published           = get_published(tweet)
-        author              = get_author(tweet)
-        body                = get_body(tweet)
-        body_translation    = get_body_translation(tweet)
-        original_language   = get_original_language(tweet)
-        link                = get_link(tweet)
-        item_id             = get_itemm_id(tweet)
-        feedsource          = get_feedsource(tweet)
+        extracted_tweet = extract_tweet_values(tweet)
+        extracted_hashtags = extract_hashtags(extracted_tweet[3])
 
-        # Add atoms as tuple to atomized_batch
         atomized_batch.append((
-                    id,
-                    published,
-                    author,
-                    body,
-                    body_translation,
-                    original_language,
-                    link,
-                    item_id,
-                    feedsource
-                ))
+                extracted_tweet,
+                extracted_hashtags
+            ))
+
     return atomized_batch
+
+def extract_hashtags(tweet_body):
+     tweet_words = tweet_body.split(' ')
+     hastags = []
+     for word in tweet_words:
+         if (len(word) > 1):
+             if (word[0] == '#'):
+                 word = word.split('.')[0] # If at end of sentence remove fullstop
+                 word = word.split(',')[0] # If before a comma
+                 word = word.split(';')[0] # If before semicolon
+                 word = word.split(':')[0] # If before :
+                 word = word.split('!')[0] # If before !
+                 word = word.split('?')[0] # If before ?
+                 word = word.split('-')[0] # If before -
+                 word = word.split('\\n')[0] # If before newline
+                 hastags.append(word)
+     return hastags
 
 def insert_author(author, cursor, connection):
    
@@ -180,8 +206,19 @@ def insert_author(author, cursor, connection):
 
 def insert_atomized_batch(batch, cursor, connection):
     for tweet in batch:
-        author_id = insert_author(tweet[2], eptwitter_cursor, eptwitter_connection)
-        normalized_tweet = (tweet[0], tweet[1], author_id, tweet[3], tweet[4], tweet[5], tweet[6], tweet[7], tweet[8])
+        author_id = insert_author(tweet[0][2], eptwitter_cursor, eptwitter_connection)
+        normalized_tweet = (
+                tweet[0][0], 
+                tweet[0][1], 
+                author_id, 
+                tweet[0][3], 
+                tweet[0][4], 
+                tweet[0][5], 
+                tweet[0][6], 
+                tweet[0][7], 
+                tweet[0][8]
+            )
+
         cursor.execute(
                 "INSERT IGNORE INTO tweets "
                 + "(id, published, author, body, body_translation, original_language, link, item_id, feedsource) "
@@ -204,7 +241,7 @@ eptwitter_cursor = eptwitter_connection.cursor()
 print("Loading batch of size " + str(batch_size) + "...")
 batch = load_batch_from_db(start_id, batch_size, ep_newshub_rss_cursor)
 
-# atomize batch
+# Atomize batch
 print("Atomizing tweets...")
 atomized_batch = atomize(batch)
 
