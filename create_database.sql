@@ -14,10 +14,10 @@ use eptwitter
 DROP TABLE IF EXISTS meps;
 CREATE TABLE `meps` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `party` int(8) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `country`varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `ep_fraction` int(8) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(250) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `party` varchar(250) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `country`varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ep_fraction` varchar(250) COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
