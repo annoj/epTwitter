@@ -186,7 +186,7 @@ def insert_author(author, cursor, connection):
             print("Author " + author + " was not present in db.")
             cursor.execute(
                     "INSERT IGNORE INTO meps (name, party, country, ep_fraction) VALUES (%s, %s, %s, %s)", 
-                    (author, 1, "ger", 1))
+                    (author, None, None, None))
             connection.commit()
 
             # Query for id
