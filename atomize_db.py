@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+
 
 #
 # Atomize ep_newshub_rss database entries.
@@ -35,6 +35,8 @@
 
 import mysql.connector
 import argparse
+import json
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 #
 # Global variables
@@ -43,11 +45,15 @@ import argparse
 parser = argparse.ArgumentParser(description="Atomize ep_newshub_rss database into eptwitter database.")
 parser.add_argument("-b", "--batchsize", type=int, nargs=1, required=True, help="specify the size of the batch to atomize, type is int.")
 parser.add_argument("-s", "--startid", type=int, nargs=1, required=True, help="specify the id of the ep_newshub_rss.item to start with, type is int.")
+parser.add_argument("-a", "--analyze_sentiment", action="store_true", help="do sentiment analysis on the tweets.")
 args = parser.parse_args()
 
 # Command line args
 batch_size = args.batchsize[0]
 start_id = args.startid[0]
+
+# Sentiment Analyzer
+analyzer = SentimentIntensityAnalyzer()
 
 # Cache
 authors = {}
@@ -76,7 +82,7 @@ eptwitter_config = {
 # Function implementations
 def load_batch_from_db(start_id, batch_size, cursor):
     cursor.execute(
-            "SELECT * FROM items WHERE id >= %s AND id < %s;", 
+            "SELECT * FROM items WHERE id >= %s AND id <= %s;", 
             (start_id, (start_id + batch_size)))
     return cursor.fetchall()
 
@@ -114,6 +120,7 @@ def extract_tweet_values(tweet):
     author = get_author(tweet)
     body = get_body(tweet)
     body_translation = get_body_translation(tweet)
+    sentiment = analyze_sentiment(body_translation) if args.analyze_sentiment else ""
     original_language = get_original_language(tweet)
     link = get_link(tweet)
     item_id = get_item_id(tweet)
@@ -126,6 +133,7 @@ def extract_tweet_values(tweet):
             body,
             body_translation,
             original_language,
+            sentiment,
             link,
             item_id,
             feedsource
@@ -152,6 +160,7 @@ def extract_hashtags(tweet_body):
 
 def atomize(batch):
     atomized_batch = []
+    i = 0
     for tweet in batch:
         extracted_tweet = extract_tweet_values(tweet)
         extracted_hashtags = extract_hashtags(extracted_tweet[3])
@@ -160,8 +169,15 @@ def atomize(batch):
                 extracted_tweet,
                 extracted_hashtags
             ))
+        i += 1
+        if (i % 10000 == 0):
+            print("Processed " + str(i) + " tweets.")
 
     return atomized_batch
+
+def analyze_sentiment(text):
+    score = analyzer.polarity_scores(text) if text is not None else None
+    return score 
 
 def insert_author(author, cursor, connection):
    
@@ -213,15 +229,16 @@ def insert_tweet(tweet, cursor, connection):
             tweet[3], 
             tweet[4], 
             tweet[5], 
-            tweet[6], 
+            str(tweet[6]), 
             tweet[7], 
-            tweet[8]
+            tweet[8],
+            tweet[9]
     )
 
     cursor.execute(
         "INSERT IGNORE INTO tweets "
-        + "(id, published, author, body, body_translation, original_language, link, item_id, feedsource) "
-        + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", 
+        + "(id, published, author, body, body_translation, original_language, sentiment, link, item_id, feedsource) "
+        + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", 
         normalized_tweet
     )
 

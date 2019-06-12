@@ -25,7 +25,7 @@ for mep in meps:
     
     print(name, country, politicalGroup, nationalPoliticalGroup)
     cursor.execute(
-            "INSERT IGNORE INTO meps (name, party, country, ep_fraction) VALUES (%s, %s, %s, %s)",
+            "INSERT INTO meps (name, party, country, ep_fraction) VALUES (%s, %s, %s, %s)",
             (name, nationalPoliticalGroup, country, politicalGroup))
 
 connection.commit()

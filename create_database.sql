@@ -55,6 +55,7 @@ CREATE TABLE `tweets` (
   `body` varchar(1000) COLLATE utf8mb4_unicode_ci NOT NULL,
   `body_translation` varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `original_language` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `sentiment` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `link` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
   `item_id` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
   `feedsource` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,
