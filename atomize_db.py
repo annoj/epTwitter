@@ -22,14 +22,9 @@
 #   )
 # .
 #
-# TODO: Scrape party of mep
-# TODO: Scrape fraction of mep
-# TODO: Scrape mep country
 # TODO: Handle meps changing fraction and party
+# TODO: Extract proper published date
 # 
-# TODO: Extract hashtags
-# 
-# TODO: Analyse sentiment and tag hashtags
 #
 #
 
